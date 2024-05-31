@@ -96,16 +96,18 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   uint16_t* ptr = (uint16_t*)0x20050000;
-  for (uint32_t i = 0; i < (320 * 160); ++i) {
+  for (uint32_t i = 0; i < (320 * 160); i++) {
       ptr[i] = 0xF800;
   }
 
-  for (uint32_t i = 0; i < (320 * 160); ++i) {
-      ptr[i + 160 * 240] = 0x07E0;
+  ptr = (uint16_t*)0x20050000 + 160 * 320;
+  for (uint32_t i = 0; i < (320 * 160); i++) {
+      ptr[i] = 0x07E0;
   }
 
-  for (uint32_t i = 0; i < (320 * 160); ++i) {
-	  ptr[i + 320 * 240] = 0x001F;
+  ptr = (uint16_t*)0x20050000 + 320 * 320;
+  for (uint32_t i = 0; i < (320 * 160); i++) {
+	  ptr[i] = 0x001F;
   }
 
   /* USER CODE END 2 */
@@ -241,7 +243,7 @@ static void MX_DSIHOST_DSI_Init(void)
   VidCfg.Mode = DSI_VID_MODE_NB_PULSES;
   VidCfg.PacketSize = 320;
   VidCfg.NumberOfChunks = 1;
-  VidCfg.NullPacketSize = 0;
+  VidCfg.NullPacketSize = 49;
   VidCfg.HSPolarity = DSI_HSYNC_ACTIVE_LOW;
   VidCfg.VSPolarity = DSI_VSYNC_ACTIVE_LOW;
   VidCfg.DEPolarity = DSI_DATA_ENABLE_ACTIVE_HIGH;
@@ -255,12 +257,12 @@ static void MX_DSIHOST_DSI_Init(void)
   VidCfg.LPCommandEnable = DSI_LP_COMMAND_DISABLE;
   VidCfg.LPLargestPacketSize = 28;
   VidCfg.LPVACTLargestPacketSize = 0;
-  VidCfg.LPHorizontalFrontPorchEnable = DSI_LP_HFP_DISABLE;
-  VidCfg.LPHorizontalBackPorchEnable = DSI_LP_HBP_DISABLE;
-  VidCfg.LPVerticalActiveEnable = DSI_LP_VACT_DISABLE;
-  VidCfg.LPVerticalFrontPorchEnable = DSI_LP_VFP_DISABLE;
-  VidCfg.LPVerticalBackPorchEnable = DSI_LP_VBP_DISABLE;
-  VidCfg.LPVerticalSyncActiveEnable = DSI_LP_VSYNC_DISABLE;
+  VidCfg.LPHorizontalFrontPorchEnable = DSI_LP_HFP_ENABLE;
+  VidCfg.LPHorizontalBackPorchEnable = DSI_LP_HBP_ENABLE;
+  VidCfg.LPVerticalActiveEnable = DSI_LP_VACT_ENABLE;
+  VidCfg.LPVerticalFrontPorchEnable = DSI_LP_VFP_ENABLE;
+  VidCfg.LPVerticalBackPorchEnable = DSI_LP_VBP_ENABLE;
+  VidCfg.LPVerticalSyncActiveEnable = DSI_LP_VSYNC_ENABLE;
   VidCfg.FrameBTAAcknowledgeEnable = DSI_FBTAA_DISABLE;
   if (HAL_DSI_ConfigVideoMode(&hdsi, &VidCfg) != HAL_OK)
   {
@@ -336,14 +338,31 @@ static void MX_LTDC_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN LTDC_Init 2 */
+  uint8_t cmd_e0[] = {0x0D, 0x13, 0x14, 0x01, 0x0C, 0x03, 0x31, 0x46, 0x45, 0x03, 0x0C, 0x0A, 0x2A, 0x30, 0x0D};
+  HAL_DSI_LongWrite(&hdsi, 0, DSI_DCS_LONG_PKT_WRITE, sizeof(cmd_e0), 0xE0, cmd_e0);
+  uint8_t cmd_e1[] = {0x0A, 0x10, 0x16, 0x05, 0x12, 0x08, 0x3D, 0x45, 0x53, 0x07, 0x11, 0x0E, 0x30, 0x33, 0x0A};
+  HAL_DSI_LongWrite(&hdsi, 0, DSI_DCS_LONG_PKT_WRITE, sizeof(cmd_e1), 0xE1, cmd_e1);
+  uint8_t cmd_c0[] = {0x0A, 0x0A};
+  HAL_DSI_LongWrite(&hdsi, 0, DSI_DCS_LONG_PKT_WRITE, sizeof(cmd_c0), 0xC0, cmd_c0);
+  HAL_DSI_ShortWrite(&hdsi, 0, DSI_DCS_SHORT_PKT_WRITE_P1, 0xC1, 0x41);
+  uint8_t cmd_c5[] = {0x00, 0x25, 0x80};
+  HAL_DSI_LongWrite(&hdsi, 0, DSI_DCS_LONG_PKT_WRITE, sizeof(cmd_c5), 0xC5, cmd_c5);
   HAL_DSI_ShortWrite(&hdsi, 0, DSI_DCS_SHORT_PKT_WRITE_P1, 0x36, 0x48);
   HAL_DSI_ShortWrite(&hdsi, 0, DSI_DCS_SHORT_PKT_WRITE_P1, 0x3A, 0x55);
   HAL_DSI_ShortWrite(&hdsi, 0, DSI_DCS_SHORT_PKT_WRITE_P1, 0xF8, 0x05);
+  uint8_t cmd_b1[] = {0xA0, 0x11};
+  HAL_DSI_LongWrite(&hdsi, 0, DSI_DCS_LONG_PKT_WRITE, sizeof(cmd_b1), 0xB1, cmd_b1);
+  HAL_DSI_ShortWrite(&hdsi, 0, DSI_DCS_SHORT_PKT_WRITE_P1, 0xB4, 0x02);
+  uint8_t cmd_b6[] = {0x82, 0x22, 0x3B};
+  HAL_DSI_LongWrite(&hdsi, 0, DSI_DCS_LONG_PKT_WRITE, sizeof(cmd_b6), 0xB6, cmd_b6);
+  HAL_DSI_ShortWrite(&hdsi, 0, DSI_DCS_SHORT_PKT_WRITE_P1, 0xE9, 0x01);
+  uint8_t cmd_f7[] = {0xA9, 0x51, 0x2C, 0x82};
+  HAL_DSI_LongWrite(&hdsi, 0, DSI_DCS_LONG_PKT_WRITE, sizeof(cmd_f7), 0xF7, cmd_f7);
   HAL_DSI_ShortWrite(&hdsi, 0, DSI_DCS_SHORT_PKT_WRITE_P0, 0x21, 0x00);
   HAL_DSI_ShortWrite(&hdsi, 0, DSI_DCS_SHORT_PKT_WRITE_P0, DSI_EXIT_SLEEP_MODE, 0x00);
-
   HAL_Delay(120);
   HAL_DSI_ShortWrite(&hdsi, 0, DSI_DCS_SHORT_PKT_WRITE_P0, DSI_SET_DISPLAY_ON, 0x00);
+  HAL_Delay(100);
 //  lcd_init();
   /* USER CODE END LTDC_Init 2 */
 
