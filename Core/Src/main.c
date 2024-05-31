@@ -96,8 +96,11 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   uint16_t* ptr = (uint16_t*)0x20050000;
-  for (uint32_t i = 0; i < (320 * 480); ++i) {
+  for (uint32_t i = 0; i < (320 * 240); ++i) {
       ptr[i] = 0x001F;
+  }
+  for (uint32_t i = 0; i < (320 * 240); ++i) {
+      ptr[i + 320 * 240] = 0xF800;
   }
 
   /* USER CODE END 2 */
